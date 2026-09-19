@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EIDCT Premium Gate Controller</title>
+  <style>
+    /* Dark Cyberpunk Theme Layout */
+    body {
+      background: radial-gradient(circle at center, #150f2e 0%, #070512 100%);
+      color: #ffffff;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+    
+    .terminal-container {
+      background: rgba(19, 14, 43, 0.75);
+      border: 1px solid rgba(162, 114, 255, 0.2);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
+                  0 0 40px rgba(162, 114, 255, 0.1);
+      backdrop-filter: blur(12px);
+    }
+
+    h2 { 
+      color: #bfa2ff; 
+      margin: 0 0 10px 0;
+      text-transform: uppercase; 
+      letter-spacing: 3px;
+      font-size: 26px;
+      text-shadow: 0 0 15px rgba(162, 114, 255, 0.5);
+    }
+    
+    p {
+      color: #8c82b0;
+      font-size: 14px;
+      margin: 0 0 35px 0;
+      letter-spacing: 0.5px;
+    }
+
+    /* Enlarged Premium Bounding Box Frame */
+    .scanner-box {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 320px; /* Enhanced viewport size */
+      margin: 0 auto;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid #5a3fa3;
+      box-shadow: 0 0 35px rgba(162, 114, 255, 0.2),
+                  inset 0 0 20px rgba(0, 0, 0, 0.8);
+      background: #000;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(1); /* Keeps normal back camera orientation */
+    }
+
+    /* Premium Neon Corner Overlays */
+    .corner-spec {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ff2a74;
+      z-index: 12;
+      pointer-events: none;
+    }
+    .top-left { top: 15px; left: 15px; border-right: none; border-bottom: none; }
+    .top-right { top: 15px; right: 15px; border-left: none; border-bottom: none; }
+    .bottom-left { bottom: 15px; left: 15px; border-right: none; border-top: none; }
+    .bottom-right { bottom: 15px; right: 15px; border-left: none; border-top: none; }
+
+    /* Moving Laser Sweeper Overlay */
+    .laser {
+      position: absolute;
+      width: 100%; 
+      height: 6px;
+      background: linear-gradient(to right, transparent, #ff2a74, #ffffff, #ff2a74, transparent);
+      box-shadow: 0 0 15px #ff2a74, 0 0 30px #ff2a74;
+      animation: scan 1.8s ease-in-out infinite;
+      z-index: 10;
+      display: none;
+    }
+    
+    @keyframes scan {
+      0% { top: 5%; }
+      50% { top: 90%; }
+      100% { top: 5%; }
+    }
+
+    /* Premium Glowing Status Banner */
+    .status-wrapper {
+      margin-top: 30px;
+      min-height: 48px;
+    }
+
+    .status { 
+      font-size: 14px; 
+      font-weight: bold; 
+      color: #ffd700; 
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 12px 28px;
+      display: inline-block;
+      background: rgba(255, 215, 0, 0.03);
+      border-radius: 30px;
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.05);
+      transition: all 0.4s ease;
+    }
+
+    /* Action Trigger Button Custom Design */
+    .scan-btn {
+      display: inline-block;
+      margin-top: 25px;
+      background: linear-gradient(135deg, #8a4fff 0%, #ff2a74 100%);
+      color: white;
+      border: none;
+      padding: 16px 45px;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 5px 25px rgba(255, 42, 116, 0.35);
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
+    .scan-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(138, 79, 255, 0.5);
+      background: linear-gradient(135deg, #9966ff 0%, #ff4185 100%);
+    }
+
+    .scan-btn:active {
+      transform: translateY(1px);
+    }
+
+    .scan-btn:disabled {
+      background: #201a30;
+      color: #524b6e;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+      border: 1px solid rgba(162, 114, 255, 0.05);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal-container">
+    <h2>EIDCT Gateway Control</h2>
+    <p>Present pass card inside system terminal frame loop</p>
+
+    <div id="scannerBox" class="scanner-box">
+      <!-- Cyber Design Corners -->
+      <div class="corner-spec top-left"></div>
+      <div class="corner-spec top-right"></div>
+      <div class="corner-spec bottom-left"></div>
+      <div class="corner-spec bottom-right"></div>
+      
+      <div id="laserLine" class="laser"></div>
+      <video id="videoPreview" autoplay playsinline muted></video>
+    </div>
+
+    <div class="status-wrapper">
+      <div id="status" class="status">SYSTEM ACCESS: ON STANDBY...</div>
+    </div>
+
+    <button id="scanBtn" class="scan-btn" disabled>Verify Ticket</button>
+  </div>
+
+  <script>
+    const statusText = document.getElementById('status');
+    const scanBtn = document.getElementById('scanBtn');
+    const laserLine = document.getElementById('laserLine');
+    const scannerBox = document.getElementById('scannerBox');
+    const videoPreview = document.getElementById('videoPreview');
+
+    let processing = false;
+
+    // Stream native environment camera lens input 
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } }, 
+          audio: false 
+        });
+        videoPreview.srcObject = stream;
+        statusText.innerText = "SYSTEM ACTIVE: WAITING FOR TRANSMISSION";
+        scanBtn.disabled = false;
+      } catch (err) {
+        statusText.innerText = "HARDWARE FAILURE: CAMERA DISCONNECTED";
+        statusText.style.color = "#ff3366";
+        statusText.style.background = "rgba(255, 51, 102, 0.05)";
+        statusText.style.borderColor = "rgba(255, 51, 102, 0.3)";
+      }
+    }
+
+    // Execute secure credential parsing cycle routine
+    function runScannerSystem() {
+      if (processing || scanBtn.disabled) return; 
+      processing = true;
+
+      // Enter state verification layout settings
+      scanBtn.disabled = true;
+      scanBtn.innerText = "Analyzing...";
+      laserLine.style.display = "block"; 
+      
+      scannerBox.style.borderColor = "#ff2a74";
+      scannerBox.style.boxShadow = "0 0 40px rgba(255, 42, 116, 0.3)";
+      
+      statusText.innerText = "CRITICAL SEARCH: MATCHING SECURITY HASH CODE...";
+      statusText.style.color = "#ffd700";
+      statusText.style.background = "rgba(255, 215, 0, 0.03)";
+      statusText.style.borderColor = "rgba(255, 215, 0, 0.3)";
+
+      // Grant access clearance after precisely 2 seconds
+      setTimeout(() => {
+        laserLine.style.display = "none";
+        
+        // Success Green Matrix Design Changes
+        scannerBox.style.borderColor = "#00ff66";
+        scannerBox.style.boxShadow = "0 0 40px rgba(0, 255, 102, 0.4)";
+        
+        statusText.innerText = "ACCESS GRANTED: SECURITY DEACTIVATED";
+        statusText.style.color = "#00ff66";
+        statusText.style.background = "rgba(0, 255, 102, 0.05)";
+        statusText.style.borderColor = "rgba(0, 255, 102, 0.4)";
+        scanBtn.innerText = "GRANTED";
+
+        // Sound Layer 1: Hardware confirmation snap beep fires first
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+        osc.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12); 
+
+        // Sound Layer 2: Voice synth voice tracking narrate execution loops cleanly after beep finishes
+        setTimeout(() => {
+          const voiceMessage = new SpeechSynthesisUtterance("Access Granted");
+          voiceMessage.rate = 0.95; // Premium steady cadence speed
+          voiceMessage.pitch = 1.05; // Balanced electronic voice profile 
+          window.speechSynthesis.speak(voiceMessage);
+        }, 300);
+
+        // Auto reset configuration state layers back to system standby 
+        setTimeout(() => {
+          processing = false;
+          scanBtn.disabled = false;
+          scanBtn.innerText = "Verify Ticket";
+          
+          // Revert back styling setups
+          scannerBox.style.borderColor = "#5a3fa3";
+          scannerBox.style.boxShadow = "0 0 35px rgba(162, 114, 255, 0.2)";
+          
+          statusText.innerText = "SYSTEM ACTIVE: WAITING FOR TRANSMISSION";
+          statusText.style.color = "#ffd700";
+          statusText.style.background = "rgba(255, 215, 0, 0.03)";
+          statusText.style.borderColor = "rgba(255, 215, 0, 0.2)";
+        }, 2600);
+
+      }, 2000);
+    }
+
+    // Event Trigger Core Controls
+    scanBtn.addEventListener('click', runScannerSystem);
+    window.addEventListener('keydown', (e) => { if (e.key === 'Enter') runScannerSystem(); });
+    window.addEventListener('load', startCamera);
+  </script>
+</body>
+</html>

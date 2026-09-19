@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eid Celebration</title>
+<meta name="description" content="Eid Celebration countdown app">
+<meta name="theme-color" content="#0a0d0a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Eid Celebration">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg-black:#0a0d0a;
+    --card-black:#141815;
+    --green-bright:#8bff3c;
+    --text-white:#f5f7f3;
+    --text-dim:#8a938a;
+    --text-faint:#5c655c;
+    --stroke:#242a24;
+  }
+  [data-theme="light"]{
+    --bg-black:#f4f2f7;
+    --card-black:#ffffff;
+    --text-white:#211c2e;
+    --text-dim:#8b8596;
+    --text-faint:#b3adbe;
+    --stroke:#ece9f2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Inter,Segoe UI,Roboto,sans-serif;
+    background:radial-gradient(ellipse at top, #2a2f2a 0%, #0a0a0a 55%, #000 100%);
+    color:var(--text-white);
+    min-height:100vh;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    transition:background 0.3s;
+  }
+  [data-theme="light"] body{
+    background:radial-gradient(ellipse at top, #eae6f2 0%, #f4f2f7 60%);
+  }
+
+  .phone{
+    position:relative;
+    width:100%;
+    max-width:420px;
+    height:min(90vh, 800px);
+    min-height:560px;
+  }
+  .screen{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:var(--bg-black);
+    border-radius:28px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 30px 60px -15px rgba(0,0,0,0.5);
+    transition:background 0.3s;
+  }
+
+  @media (max-width:480px){
+    body{padding:0;}
+    .phone{max-width:100%;height:100vh;min-height:100dvh;}
+    .screen{border-radius:0;}
+  }
+
+  .content{
+    flex:1;
+    overflow-y:auto;
+    padding:20px 16px 90px;
+    scrollbar-width:none;
+  }
+  .content::-webkit-scrollbar{display:none;}
+
+  /* ---- header (screenshot style) ---- */
+  .header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:2px 2px 20px;
+  }
+  .avatar{
+    width:42px;height:42px;border-radius:50%;
+    background:linear-gradient(135deg,#ffce7a,#ff9d4d);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    font-size:18px;
+  }
+  .header-text{flex:1;min-width:0;}
+  .greeting-small{
+    font-size:11.5px;
+    color:var(--text-dim);
+    margin-bottom:3px;
+  }
+  .name-input{
+    display:block;
+    width:100%;
+    background:transparent;
+    border:none;
+    outline:none;
+    font-family:inherit;
+    font-size:15px;
+    font-weight:700;
+    color:var(--text-white);
+    padding:0;
+  }
+  .name-input::placeholder{
+    color:var(--text-faint);
+    font-weight:600;
+  }
+  .header-icons{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .icon-btn{
+    width:36px;height:36px;
+    border-radius:50%;
+    background:var(--card-black);
+    border:1px solid var(--stroke);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-white);
+    flex-shrink:0;
+    cursor:pointer;
+  }
+  .icon-btn svg{width:16px;height:16px;}
+
+  /* ---- celebration countdown card (screenshot gradient style) ---- */
+  .celebration-card{
+    position:relative;
+    background:linear-gradient(135deg,#7b5cf0 0%, #b06cf0 45%, #f06cd0 100%);
+    border-radius:24px;
+    padding:20px 18px;
+    overflow:hidden;
+    color:#fff;
+  }
+  .celebration-card::after{
+    content:"";
+    position:absolute;
+    top:-30px;right:-30px;
+    width:130px;height:130px;
+    background:radial-gradient(circle, rgba(255,255,255,0.25), transparent 70%);
+  }
+  .celebration-label{
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:4px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:relative;
+    z-index:2;
+  }
+  .celebration-label .badge{
+    font-size:10px;
+    font-weight:700;
+    color:#5c3d99;
+    background:rgba(255,255,255,0.85);
+    padding:3px 9px;
+    border-radius:20px;
+  }
+  .celebration-sub{
+    font-size:11px;
+    opacity:0.85;
+    margin-bottom:16px;
+    max-width:200px;
+    position:relative;
+    z-index:2;
+  }
+
+  .countdown-row{
+    display:flex;
+    gap:8px;
+    position:relative;
+    z-index:2;
+    margin-bottom:14px;
+  }
+  .count-box{
+    background:rgba(255,255,255,0.18);
+    backdrop-filter:blur(6px);
+    border-radius:12px;
+    padding:8px 6px 7px;
+    text-align:center;
+    flex:1;
+  }
+  .count-num{
+    font-size:18px;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+    color:#fff;
+  }
+  .count-unit{
+    font-size:8px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-top:4px;
+    opacity:0.85;
+  }
+
+  .celebration-date{
+    font-size:11.5px;
+    font-weight:600;
+    opacity:0.9;
+    position:relative;
+    z-index:2;
+    border-top:1px solid rgba(255,255,255,0.25);
+    padding-top:10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .celebration-date #event-title{
+    font-weight:800;
+    opacity:1;
+  }
+
+  /* ---- celebration started state ---- */
+  .celebration-started{
+    display:none;
+    position:relative;
+    z-index:2;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+    padding:16px 14px;
+    border-radius:16px;
+    background:rgba(255,255,255,0.14);
+    backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,0.3);
+  }
+  .celebration-started.show{
+    display:flex;
+    animation:fadeSlideIn 0.5s ease;
+  }
+  @keyframes fadeSlideIn{
+    from{opacity:0; transform:translateY(6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .celebration-started-text{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:0.2px;
+  }
+  .celebration-started-text .dot{
+    width:9px;height:9px;
+    border-radius:50%;
+    background:#8bff3c;
+    box-shadow:0 0 0 0 rgba(139,255,60,0.6);
+    animation:pulseDot 1.6s infinite;
+    flex-shrink:0;
+  }
+  @keyframes pulseDot{
+    0%{box-shadow:0 0 0 0 rgba(139,255,60,0.55);}
+    70%{box-shadow:0 0 0 8px rgba(139,255,60,0);}
+    100%{box-shadow:0 0 0 0 rgba(139,255,60,0);}
+  }
+  .go-to-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:12px 16px;
+    border-radius:14px;
+    background:#fff;
+    color:#7b3dc9;
+    font-weight:800;
+    font-size:13.5px;
+    text-decoration:none;
+    box-shadow:0 8px 20px -6px rgba(0,0,0,0.35);
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .go-to-btn:active{
+    transform:scale(0.97);
+    box-shadow:0 4px 12px -4px rgba(0,0,0,0.3);
+  }
+  .go-to-btn svg{width:15px;height:15px;flex-shrink:0;}
+
+  /* ---- section heading ---- */
+  .section-heading{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:22px 2px 12px;
+  }
+  .section-heading .heading-left{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-heading .icon-circle{
+    width:24px;height:24px;
+    border-radius:50%;
+    background:var(--card-black);
+    border:1px solid var(--stroke);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--green-bright);
+    font-size:12px;
+    font-weight:700;
+    flex-shrink:0;
+  }
+  .section-heading .heading-text{
+    font-size:15px;
+    font-weight:700;
+    color:var(--text-white);
+  }
+  /* ---- what it has: two-column feature cards (screenshot "plan" style) ---- */
+  .feature-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .feature-card{
+    border-radius:20px;
+    padding:16px 14px;
+    position:relative;
+    overflow:hidden;
+    min-height:150px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    transition:transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .feature-card:active{
+    transform:scale(0.97);
+  }
+  .feature-card.style-a{
+    background:linear-gradient(160deg,#f7e88a 0%, #f0c94a 55%, #eab838 100%);
+    color:#2c2408;
+    box-shadow:0 14px 26px -12px rgba(240,201,74,0.55);
+  }
+  .feature-card.style-a::after{
+    content:"";
+    position:absolute;
+    top:-24px;right:-24px;
+    width:100px;height:100px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.5), transparent 70%);
+  }
+  .feature-card.style-b{
+    background:linear-gradient(160deg, var(--card-black) 0%, var(--bg-black) 100%);
+    border:1px solid var(--stroke);
+    color:var(--text-white);
+    box-shadow:0 14px 26px -16px rgba(0,0,0,0.6);
+  }
+  .feature-tag{
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    opacity:0.7;
+    margin-bottom:6px;
+  }
+  .feature-title{
+    font-size:15px;
+    font-weight:800;
+    margin-bottom:2px;
+  }
+  .feature-desc{
+    font-size:11px;
+    font-weight:500;
+    opacity:0.75;
+    margin-top:6px;
+    line-height:1.4;
+  }
+  .feature-num-badge{
+    width:32px;height:32px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;
+    font-size:13px;
+    align-self:flex-end;
+  }
+  .feature-card.style-a .feature-num-badge{
+    background:rgba(255,255,255,0.5);
+    color:#2c2408;
+  }
+  .feature-card.style-b .feature-num-badge{
+    background:rgba(139,255,60,0.14);
+    color:var(--green-bright);
+  }
+
+  /* ---- bottom nav (screenshot style) ---- */
+  .tabbar{
+    position:absolute;
+    left:14px;right:14px;
+    bottom:14px;
+    height:60px;
+    background:var(--card-black);
+    border:1px solid var(--stroke);
+    border-radius:30px;
+    display:flex;
+    align-items:center;
+    padding:6px;
+    z-index:40;
+    gap:6px;
+    box-shadow:0 10px 30px -10px rgba(0,0,0,0.3);
+  }
+  .tab{
+    flex:1;
+    height:100%;
+    border-radius:24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    font-weight:700;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .tab.active{
+    background:linear-gradient(135deg,#8b6cf0,#f06cd0);
+    color:#fff;
+  }
+
+  /* ---- view switching (Home / Packs) ---- */
+  .view{display:none;}
+  .view.active{display:block;animation:fadeSlideIn 0.35s ease;}
+
+  /* ---- packs list view ---- */
+  .pack-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .pack-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px;
+    border-radius:18px;
+    background:var(--card-black);
+    border:1px solid var(--stroke);
+    box-shadow:0 10px 22px -16px rgba(0,0,0,0.6);
+    transition:transform 0.15s ease;
+  }
+  .pack-item:active{transform:scale(0.98);}
+  .pack-item-icon{
+    width:44px;height:44px;
+    border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    flex-shrink:0;
+  }
+  .pack-item-icon.style-a{
+    background:linear-gradient(160deg,#f7e88a 0%, #eab838 100%);
+  }
+  .pack-item-icon.style-b{
+    background:rgba(139,255,60,0.14);
+  }
+  .pack-item-body{flex:1;min-width:0;}
+  .pack-item-title{
+    font-size:14px;
+    font-weight:800;
+    color:var(--text-white);
+    margin-bottom:2px;
+  }
+  .pack-item-desc{
+    font-size:11.5px;
+    color:var(--text-dim);
+    font-weight:500;
+  }
+  .pack-item-badge{
+    font-size:10px;
+    font-weight:700;
+    color:var(--green-bright);
+    background:rgba(139,255,60,0.12);
+    padding:4px 9px;
+    border-radius:20px;
+    flex-shrink:0;
+  }
+
+  .icon-btn#installBtn{
+    display:none;
+    background:var(--green-bright);
+    border-color:var(--green-bright);
+    color:#0a0d0a;
+  }
+  .icon-btn#installBtn.show{
+    display:flex;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="screen">
+    <div class="content">
+
+      <div class="header">
+        <div class="avatar">&#124316;</div>
+        <div class="header-text">
+          <div class="greeting-small">Hi, my name is</div>
+          <input class="name-input" id="nameInput" type="text" placeholder="Enter your name" maxlength="40" />
+        </div>
+        <div class="header-icons">
+          <div class="icon-btn" id="installBtn" title="Install app">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          </div>
+          <div class="icon-btn" id="themeToggle" title="Toggle dark / light mode">
+            <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="view view-home active" id="view-celebration">
+      <div class="celebration-card">
+        <div class="celebration-label">
+          Celebration starts in
+          <span class="badge">EID</span>
+        </div>
+        <div class="celebration-sub" id="celebration-sub">Get ready to celebrate together</div>
+
+        <div class="countdown-row" id="countdown-row">
+          <div class="count-box">
+            <div class="count-num" id="cd-days">00</div>
+            <div class="count-unit">Days</div>
+          </div>
+          <div class="count-box">
+            <div class="count-num" id="cd-hours">00</div>
+            <div class="count-unit">Hrs</div>
+          </div>
+          <div class="count-box">
+            <div class="count-num" id="cd-mins">00</div>
+            <div class="count-unit">Min</div>
+          </div>
+          <div class="count-box">
+            <div class="count-num" id="cd-secs">00</div>
+            <div class="count-unit">Sec</div>
+          </div>
+        </div>
+
+        <div class="celebration-started" id="celebration-started">
+          <div class="celebration-started-text">
+            <span class="dot"></span>
+            Celebration started
+          </div>
+          <a class="go-to-btn" href="https://eidct.vercel.app" target="_blank" rel="noopener noreferrer">
+            Go to celebration
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+
+        <div class="celebration-date"><span id="event-title">Eid</span> — <span id="detail-date">01/17/2026</span></div>
+      </div>
+      </div>
+
+      <div class="view view-home active" id="view-home">
+        <div class="section-heading">
+          <div class="heading-left">
+            <div class="icon-circle">?</div>
+            <div class="heading-text">What it has</div>
+          </div>
+        </div>
+
+        <div class="feature-row">
+          <div class="feature-card style-a">
+            <div>
+              <div class="feature-tag">Included</div>
+              <div class="feature-title" id="pack-title-1">Eid Celebration Pack</div>
+              <div class="feature-desc">Everything you need to celebrate</div>
+            </div>
+            <div class="feature-num-badge">1</div>
+          </div>
+
+          <div class="feature-card style-b">
+            <div>
+              <div class="feature-tag">Included</div>
+              <div class="feature-title" id="pack-title-2">Bonus Extras</div>
+              <div class="feature-desc">More surprises inside</div>
+            </div>
+            <div class="feature-num-badge">2</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view view-packs" id="view-packs">
+        <div class="section-heading">
+          <div class="heading-left">
+            <div class="icon-circle">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <div class="heading-text">All packs</div>
+          </div>
+        </div>
+
+        <div class="pack-list">
+          <div class="pack-item">
+            <div class="pack-item-icon style-a">🎁</div>
+            <div class="pack-item-body">
+              <div class="pack-item-title" id="pack-title-3">Eid Celebration Pack</div>
+              <div class="pack-item-desc">Everything you need to celebrate</div>
+            </div>
+            <div class="pack-item-badge">Included</div>
+          </div>
+          <div class="pack-item">
+            <div class="pack-item-icon style-b">✨</div>
+            <div class="pack-item-body">
+              <div class="pack-item-title">Bonus Extras</div>
+              <div class="pack-item-desc">More surprises inside</div>
+            </div>
+            <div class="pack-item-badge">Included</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tabbar">
+      <div class="tab active" id="tab-home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        Home
+      </div>
+      <div class="tab" id="tab-packs">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Packs
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ---- Fetch celebration countdown time from Supabase ----
+  const SUPABASE_URL = "https://bbjemfjrrcankjdjqnqo.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiamVtZmpycmNhbmtqZGpxbnFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyOTc2ODEsImV4cCI6MjA5NTg3MzY4MX0.qA_tcBtPFIYTHnPtr6oy6TauiSAi1kBlH7gz3fwbcg4";
+  const TABLE_NAME = "eid_settings";
+  const FALLBACK_CELEBRATION_TIME = "2026-01-17T00:00:00";
+  const FALLBACK_EVENT_TITLE = "Eid";
+
+  let celebrationDate = new Date(FALLBACK_CELEBRATION_TIME);
+  let eventTitle = FALLBACK_EVENT_TITLE;
+
+  async function loadCelebrationTime(){
+    try{
+      const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data, error } = await client
+        .from(TABLE_NAME)
+        .select('celebration_time, label')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single();
+      if(error || !data){ throw error || new Error('No row found'); }
+      celebrationDate = new Date(data.celebration_time);
+      if(data.label){ eventTitle = data.label; }
+    }catch(err){
+      console.warn('Supabase fetch failed, using fallback time.', err);
+      celebrationDate = new Date(FALLBACK_CELEBRATION_TIME);
+      eventTitle = FALLBACK_EVENT_TITLE;
+    }
+    const dateLabel = celebrationDate.toLocaleDateString(undefined, {
+      month: '2-digit', day: '2-digit', year: 'numeric'
+    });
+    document.getElementById('detail-date').textContent = dateLabel;
+    document.getElementById('event-title').textContent = eventTitle;
+    document.getElementById('pack-title-1').textContent = eventTitle + ' Celebration Pack';
+    document.getElementById('pack-title-3').textContent = eventTitle + ' Celebration Pack';
+    updateCountdown();
+  }
+
+  function updateCountdown(){
+    const now = new Date();
+    let diff = celebrationDate - now;
+    const countdownRow = document.getElementById('countdown-row');
+    const celebrationSub = document.getElementById('celebration-sub');
+    const celebrationStarted = document.getElementById('celebration-started');
+    if(diff <= 0){
+      document.getElementById('cd-days').textContent = '00';
+      document.getElementById('cd-hours').textContent = '00';
+      document.getElementById('cd-mins').textContent = '00';
+      document.getElementById('cd-secs').textContent = '00';
+      countdownRow.style.display = 'none';
+      celebrationSub.style.display = 'none';
+      celebrationStarted.classList.add('show');
+      return;
+    }
+    countdownRow.style.display = '';
+    celebrationSub.style.display = '';
+    celebrationStarted.classList.remove('show');
+    const days = Math.floor(diff / (1000*60*60*24));
+    const hours = Math.floor((diff / (1000*60*60)) % 24);
+    const mins = Math.floor((diff / (1000*60)) % 60);
+    const secs = Math.floor((diff / 1000) % 60);
+    document.getElementById('cd-days').textContent = String(days).padStart(2,'0');
+    document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
+    document.getElementById('cd-mins').textContent = String(mins).padStart(2,'0');
+    document.getElementById('cd-secs').textContent = String(secs).padStart(2,'0');
+  }
+  loadCelebrationTime();
+  setInterval(updateCountdown, 1000);
+
+  // ---- IndexedDB: save/load name + theme ----
+  const DB_NAME = 'eidCelebrationDB';
+  const STORE_NAME = 'profile';
+  const NAME_KEY = 'userName';
+  const THEME_KEY = 'themePref';
+  let db;
+
+  const openRequest = indexedDB.open(DB_NAME, 1);
+  openRequest.onupgradeneeded = (event) => {
+    const database = event.target.result;
+    if (!database.objectStoreNames.contains(STORE_NAME)) {
+      database.createObjectStore(STORE_NAME);
+    }
+  };
+  openRequest.onsuccess = (event) => {
+    db = event.target.result;
+    loadName();
+    loadTheme();
+  };
+  openRequest.onerror = () => console.error('Failed to open IndexedDB');
+
+  function loadName(){
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const getRequest = tx.objectStore(STORE_NAME).get(NAME_KEY);
+    getRequest.onsuccess = () => {
+      if (getRequest.result) {
+        document.getElementById('nameInput').value = getRequest.result;
+      }
+    };
+  }
+  function saveName(name){
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(name, NAME_KEY);
+  }
+  const nameInput = document.getElementById('nameInput');
+  nameInput.addEventListener('input', () => saveName(nameInput.value));
+
+  // ---- Dark / light mode toggle ----
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const sunPath = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>';
+  const moonPath = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>';
+
+  function applyTheme(theme){
+    if(theme === 'light'){
+      document.documentElement.setAttribute('data-theme','light');
+      themeIcon.innerHTML = sunPath;
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      themeIcon.innerHTML = moonPath;
+    }
+  }
+
+  function loadTheme(){
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const getRequest = tx.objectStore(STORE_NAME).get(THEME_KEY);
+    getRequest.onsuccess = () => applyTheme(getRequest.result || 'dark');
+  }
+  function saveTheme(theme){
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(theme, THEME_KEY);
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const next = isLight ? 'dark' : 'light';
+    applyTheme(next);
+    saveTheme(next);
+  });
+
+  // ---- Tab switching: Home / Packs ----
+  const tabHome = document.getElementById('tab-home');
+  const tabPacks = document.getElementById('tab-packs');
+  const viewCelebration = document.getElementById('view-celebration');
+  const viewHome = document.getElementById('view-home');
+  const viewPacks = document.getElementById('view-packs');
+  const contentEl = document.querySelector('.content');
+
+  function showHome(){
+    tabHome.classList.add('active');
+    tabPacks.classList.remove('active');
+    viewCelebration.classList.add('active');
+    viewHome.classList.add('active');
+    viewPacks.classList.remove('active');
+    contentEl.scrollTop = 0;
+  }
+  function showPacks(){
+    tabPacks.classList.add('active');
+    tabHome.classList.remove('active');
+    viewCelebration.classList.remove('active');
+    viewHome.classList.remove('active');
+    viewPacks.classList.add('active');
+    contentEl.scrollTop = 0;
+  }
+  tabHome.addEventListener('click', showHome);
+  tabPacks.addEventListener('click', showPacks);
+
+  // ---- Register service worker for PWA ----
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.warn('Service worker registration failed:', err);
+      });
+    });
+  }
+
+  // ---- Install app button ----
+  const installBtn = document.getElementById('installBtn');
+  let deferredInstallPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    installBtn.classList.add('show');
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') {
+      installBtn.classList.remove('show');
+    }
+    deferredInstallPrompt = null;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installBtn.classList.remove('show');
+    deferredInstallPrompt = null;
+  });
+
+</script>
+
+</body>
+</html>

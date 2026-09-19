@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Thanks For Joining This Celebration</title>
+	<style>
+		:root {
+			--night: #080b18;
+			--plum: #20112d;
+			--gold: #f6d58b;
+			--mint: #9ce8cd;
+			--rose: #f4a8b6;
+			--cream: #fff8e9;
+		}
+
+		* { box-sizing: border-box; }
+
+		html, body {
+			width: 100%;
+			min-height: 100%;
+			margin: 0;
+		}
+
+		body {
+			min-height: 100vh;
+			overflow: hidden;
+			display: grid;
+			place-items: center;
+			color: var(--cream);
+			background:
+				radial-gradient(circle at 50% 78%, rgba(246, 213, 139, 0.13), transparent 32%),
+				linear-gradient(145deg, var(--night), var(--plum) 58%, #0e1b2b);
+			font-family: Georgia, "Times New Roman", serif;
+		}
+
+		#fireworks {
+			position: fixed;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+		}
+
+		.message {
+			position: relative;
+			z-index: 1;
+			width: min(90vw, 760px);
+			padding: 2rem 1.5rem;
+			text-align: center;
+			animation: messageIn 1.6s cubic-bezier(.2, .9, .25, 1) both;
+		}
+
+		.eyebrow {
+			margin: 0 0 1.1rem;
+			color: var(--mint);
+			font: 700 0.72rem/1.4 Arial, sans-serif;
+			letter-spacing: 0.42em;
+			text-transform: uppercase;
+		}
+
+		h1 {
+			margin: 0;
+			color: var(--cream);
+			font-size: clamp(2.6rem, 8vw, 6.2rem);
+			font-style: italic;
+			font-weight: 700;
+			line-height: 0.98;
+			text-shadow:
+				0 0 10px rgba(255, 248, 233, 0.8),
+				0 0 28px rgba(246, 213, 139, 0.75),
+				0 0 70px rgba(156, 232, 205, 0.42);
+			animation: glow 2.8s ease-in-out infinite;
+		}
+
+		.rule {
+			width: min(38vw, 180px);
+			height: 1px;
+			margin: 1.8rem auto 0;
+			background: linear-gradient(90deg, transparent, var(--gold), transparent);
+			box-shadow: 0 0 15px var(--gold);
+		}
+
+		@keyframes messageIn {
+			from { opacity: 0; transform: translateY(22px) scale(.96); }
+			to { opacity: 1; transform: translateY(0) scale(1); }
+		}
+
+		@keyframes glow {
+			0%, 100% { filter: brightness(.95); }
+			50% { filter: brightness(1.18); }
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			*, *::before, *::after {
+				animation-duration: 0.001ms !important;
+				animation-iteration-count: 1 !important;
+			}
+		}
+	</style>
+</head>
+<body>
+	<canvas id="fireworks" aria-hidden="true"></canvas>
+
+	<main class="message">
+		<p class="eyebrow">Eid Mubarak</p>
+		<h1>Thanks For Joining This Celebration</h1>
+		<div class="rule" aria-hidden="true"></div>
+	</main>
+
+	<script>
+		(() => {
+			const canvas = document.getElementById('fireworks');
+			const context = canvas.getContext('2d');
+			const colors = ['#f6d58b', '#9ce8cd', '#f4a8b6', '#fff8e9', '#8ed8ff'];
+			const particles = [];
+			let width = 0;
+			let height = 0;
+			let lastLaunch = 0;
+
+			function resize() {
+				const ratio = Math.min(window.devicePixelRatio || 1, 2);
+				width = window.innerWidth;
+				height = window.innerHeight;
+				canvas.width = width * ratio;
+				canvas.height = height * ratio;
+				canvas.style.width = width + 'px';
+				canvas.style.height = height + 'px';
+				context.setTransform(ratio, 0, 0, ratio, 0, 0);
+			}
+
+			function launch() {
+				const x = width * (0.15 + Math.random() * 0.7);
+				const targetY = height * (0.12 + Math.random() * 0.38);
+				particles.push({
+					type: 'rocket', x, y: height + 16,
+					vx: (Math.random() - 0.5) * 0.7,
+					vy: -7.5 - Math.random() * 2,
+					targetY, color: colors[Math.floor(Math.random() * colors.length)], trail: []
+				});
+			}
+
+			function burst(x, y, color) {
+				const count = 52;
+				for (let i = 0; i < count; i++) {
+					const angle = Math.PI * 2 * i / count;
+					const speed = 2 + Math.random() * 4.5;
+					particles.push({
+						type: 'spark', x, y,
+						vx: Math.cos(angle) * speed,
+						vy: Math.sin(angle) * speed,
+						life: 1, decay: 0.012 + Math.random() * 0.014,
+						gravity: 0.045, size: 1.4 + Math.random() * 2.2,
+						color: Math.random() < 0.2 ? colors[Math.floor(Math.random() * colors.length)] : color
+					});
+				}
+			}
+
+			function animate(time) {
+				context.fillStyle = 'rgba(8, 11, 24, 0.2)';
+				context.fillRect(0, 0, width, height);
+
+				if (time - lastLaunch > 850 + Math.random() * 700) {
+					lastLaunch = time;
+					launch();
+				}
+
+				for (let index = particles.length - 1; index >= 0; index--) {
+					const particle = particles[index];
+					if (particle.type === 'rocket') {
+						particle.trail.push({ x: particle.x, y: particle.y });
+						if (particle.trail.length > 7) particle.trail.shift();
+						particle.x += particle.vx;
+						particle.y += particle.vy;
+						particle.vy += 0.055;
+						context.strokeStyle = particle.color;
+						context.globalAlpha = 0.65;
+						context.beginPath();
+						particle.trail.forEach((point, trailIndex) => {
+							trailIndex ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y);
+						});
+						context.stroke();
+						context.globalAlpha = 1;
+						if (particle.y <= particle.targetY || particle.vy >= -1) {
+							burst(particle.x, particle.y, particle.color);
+							particles.splice(index, 1);
+						}
+					} else {
+						particle.x += particle.vx;
+						particle.y += particle.vy;
+						particle.vy += particle.gravity;
+						particle.vx *= 0.985;
+						particle.life -= particle.decay;
+						if (particle.life <= 0) {
+							particles.splice(index, 1);
+							continue;
+						}
+						context.globalAlpha = particle.life;
+						context.fillStyle = particle.color;
+						context.beginPath();
+						context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+						context.fill();
+					}
+				}
+				context.globalAlpha = 1;
+				requestAnimationFrame(animate);
+			}
+
+			resize();
+			window.addEventListener('resize', resize);
+			for (let index = 0; index < 3; index++) {
+				setTimeout(launch, index * 380);
+			}
+			requestAnimationFrame(animate);
+		})();
+	</script>
+</body>
+</html>
